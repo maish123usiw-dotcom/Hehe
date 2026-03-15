@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I'm Sorry | Interactive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #020617; font-family: sans-serif; }
+        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
+        #ui { position: relative; z-index: 10; height: 100vh; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10vh; pointer-events: none; }
+        .glass-card { pointer-events: auto; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        #noBtn { transition: all 0.15s ease; cursor: pointer; position: relative; }
+        .heart-beat { animation: heartbeat 1.2s ease-in-out infinite; }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="glass-card p-8 rounded-[2rem] text-center shadow-2xl mx-4 max-w-sm">
+            <h1 class="text-white text-3xl font-black mb-2">I'm so sorry.</h1>
+            <p class="text-slate-400 mb-6">I know I messed up. Can we make it right?</p>
+            <div class="flex gap-4 justify-center">
+                <button onclick="accept()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-500 transition-all">Yes</button>
+                <button id="noBtn" onmouseover="dodge()" class="bg-slate-800 text-slate-400 px-8 py-3 rounded-xl font-bold">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, boy, stars, heart;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 1. STARS
+            const starGeom = new THREE.BufferGeometry();
+            const posArray = new Float32Array(1000 * 3);
+            for(let i=0; i < 3000; i++) posArray[i] = (Math.random() - 0.5) * 100;
+            starGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            stars = new THREE.Points(starGeom, new THREE.PointsMaterial({ size: 0.05, color: 0xffffff }));
+            scene.add(stars);
+
+            // 2. THE CHARACTER (Using Basic Materials for guaranteed visibility)
+            boy = new THREE.Group();
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1, 12), new THREE.MeshBasicMaterial({ color: 0x6366f1 }));
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffdbac }));
+            head.position.y = 0.9;
+            boy.add(torso, head);
+            scene.add(boy);
+
+            // 3. THE HEART
+            const hShape = new THREE.Shape();
+            hShape.moveTo(0, 0);
+            hShape.bezierCurveTo(0, 0.3, 0.5, 0.8, 1, 0.8);
+            hShape.bezierCurveTo(1.5, 0.8, 1.5, 0, 0, -1);
+            hShape.bezierCurveTo(-1.5, 0, -1.5, 0.8, -1, 0.8);
+            hShape.bezierCurveTo(-0.5, 0.8, 0, 0.3, 0, 0);
+            
+            const heartGeom = new THREE.ShapeGeometry(hShape);
+            heart = new THREE.Mesh(heartGeom, new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide }));
+            heart.scale.set(0.4, 0.4, 0.4);
+            heart.rotation.z = Math.PI;
+            heart.position.y = 1.8;
+            scene.add(heart);
+
+            camera.position.z = 5;
+            camera.position.y = 1;
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = Date.now() * 0.002;
+            if(boy) {
+                boy.rotation.y = Math.sin(t) * 0.2;
+                boy.position.y = Math.sin(t * 0.5) * 0.1;
+            }
+            if(heart) {
+                heart.scale.set(0.4 + Math.sin(t*2)*0.05, 0.4 + Math.sin(t*2)*0.05, 0.4);
+            }
+            stars.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+
+        function dodge() {
+            const btn = document.getElementById('noBtn');
+            btn.style.position = 'absolute';
+            btn.style.left = Math.random() * 80 + '%';
+            btn.style.top = Math.random() * 80 + '%';
+        }
+
+        function accept() {
+            document.body.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-screen bg-slate-950 text-white text-center">
+                    <div class="text-9xl mb-6 heart-beat">💖</div>
+                    <h2 class="text-5xl font-bold mb-4">Thank You!</h2>
+                    <p class="text-slate-400">Talk soon?</p>
+                </div>`;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
